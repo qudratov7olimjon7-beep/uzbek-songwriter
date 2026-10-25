@@ -1,15 +1,14 @@
-import { generateSong, songToText, toNewAlphabet } from "./generator.js";
+import { generateSong, songToText, toStandardLatin } from "./generator.js";
 
 const KEY = "uzbek-songwriter-arxiv";
 const OLD_KEY = "kulgili-qoshiq-arxiv";
-const VOICE_KEY = "uzbek-songwriter-ovoz";
 const $ = (s) => document.querySelector(s);
 
-const EXAMPLE_PROMPTS = ["mushugim palov yeydi", "qaynonam taksi haydaydi", "imtihon kuni telefonim öçdi",
-  "Çorsu bozorida xöroz", "töyda Damas raqs tuşdi", "dadam futbol köradi"];
+const EXAMPLE_PROMPTS = ["mushugim palov yeydi", "qaynonam taksi haydaydi", "imtihon kuni telefonim oʻchdi",
+  "Chorsu bozorida xoʻroz", "toʻyda Damas raqs tushdi", "dadam futbol koʻradi"];
 
-// Eski yozuvdagi qöşiqlarni yangi alifboga ögiradi (takror qöllansa ham ziyonsiz).
-const migrate = (s) => ({ ...s, title: toNewAlphabet(s.title), verses: s.verses.map((v) => v.map(toNewAlphabet)), chorus: s.chorus.map(toNewAlphabet) });
+// Yangi alifbodagi (ö, ğ, ş, ç) eski saqlangan qoʻshiqlarni joriy lotin yozuviga qaytaradi (takror qoʻllansa ham ziyonsiz).
+const migrate = (s) => ({ ...s, title: toStandardLatin(s.title), verses: s.verses.map((v) => v.map(toStandardLatin)), chorus: s.chorus.map(toStandardLatin) });
 
 function load() {
   const raw = localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY);
@@ -29,52 +28,73 @@ const fmtDate = (t) => {
   return `${d.getDate()}-${OYLAR[d.getMonth()]}, ${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// --- Ovozli ijro ---
+// --- Ovozli ijro: faqat oʻzbekcha ovozlar ---
 const tts = window.speechSynthesis;
-let voices = [];
+const GENDER_KEY = "uzbek-songwriter-ovoz";
+const MALE = /sardor|male|erkak/i, FEMALE = /madina|female|ayol/i;
+let uzVoices = { erkak: null, ayol: null };
 
-function pickDefaultVoice() {
-  const saved = localStorage.getItem(VOICE_KEY);
-  return voices.find((v) => v.voiceURI === saved) || voices.find((v) => /^uz/i.test(v.lang))
-    || voices.find((v) => /^tr/i.test(v.lang)) || voices[0];
+function findUzVoices() {
+  const list = tts ? tts.getVoices().filter((v) => /^uz/i.test(v.lang)) : [];
+  const ayol = list.find((v) => FEMALE.test(v.name)) || null;
+  const erkak = list.find((v) => MALE.test(v.name) && !FEMALE.test(v.name)) || list.find((v) => v !== ayol) || null;
+  uzVoices = { erkak, ayol: ayol || (erkak ? null : list[0] || null) };
 }
-function fillVoiceSelects() {
-  voices = tts ? tts.getVoices() : [];
-  const def = pickDefaultVoice();
-  document.querySelectorAll(".voice-select").forEach((sel) => {
-    sel.innerHTML = voices.map((v) => `<option value="${esc(v.voiceURI)}">${esc(v.name)} (${esc(v.lang)})</option>`).join("");
-    if (def) sel.value = def.voiceURI;
-    sel.disabled = !voices.length;
-    sel.closest(".player").querySelector(".no-voice").hidden = voices.length > 0;
+function chosenGender() {
+  const saved = localStorage.getItem(GENDER_KEY);
+  if (uzVoices[saved]) return saved;
+  return uzVoices.erkak ? "erkak" : "ayol";
+}
+function updatePlayers() {
+  findUzVoices();
+  const any = uzVoices.erkak || uzVoices.ayol;
+  const g = chosenGender();
+  document.querySelectorAll(".player").forEach((pl) => {
+    pl.querySelector(".play").disabled = !any;
+    pl.querySelectorAll("input[name^=ovoz]").forEach((r) => {
+      r.disabled = !uzVoices[r.value];
+      r.checked = r.value === g && !!any;
+    });
+    const note = pl.querySelector(".voice-note");
+    if (!any) note.textContent = "Bu brauzerda oʻzbekcha ovoz topilmadi. Oʻzbekcha ovozlar Microsoft Edge brauzerida (kompyuter va Android) mavjud — saytni oʻsha yerda oching.";
+    else if (!uzVoices.erkak || !uzVoices.ayol) note.textContent = `Bu brauzerda faqat ${uzVoices.erkak ? "erkak" : "ayol"} ovozi bor.`;
+    else note.textContent = "";
+    note.hidden = !note.textContent;
   });
 }
-if (tts) tts.addEventListener("voiceschanged", fillVoiceSelects);
+if (tts) tts.addEventListener("voiceschanged", updatePlayers);
 
 function speak(song, player) {
-  if (!tts) return toast("Brauzer ovozli öqişni qöllamaydi");
+  const voice = uzVoices[player.querySelector("input[name^=ovoz]:checked")?.value];
+  if (!tts || !voice) return;
   tts.cancel();
-  const voice = voices.find((v) => v.voiceURI === player.querySelector(".voice-select").value);
   const rate = Number(player.querySelector(".rate").value);
   const parts = [song.title, ...song.verses.flatMap((v) => [v.join(". "), song.chorus.join(". ")])];
   for (const text of parts) {
     const u = new SpeechSynthesisUtterance(text);
-    if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "uz-UZ";
+    u.voice = voice;
+    u.lang = "uz-UZ";
     u.rate = rate;
     tts.speak(u);
   }
 }
 
+let playerCount = 0;
 function playerHTML() {
+  const n = ++playerCount;
   return `<div class="player">
     <div class="btns">
-      <button type="button" class="btn play" data-act="play" aria-label="Qöşiqni ijro etiş">▶ Ijro et</button>
-      <button type="button" class="btn" data-act="stop" aria-label="Ijroni töxtatiş">■ Stop</button>
+      <button type="button" class="btn play" data-act="play" aria-label="Qoʻshiqni ijro etish">▶ Ijro et</button>
+      <button type="button" class="btn" data-act="stop" aria-label="Ijroni toʻxtatish">■ Stop</button>
     </div>
     <div class="grid">
-      <div><label>Ovoz<select class="voice-select" aria-label="Ovozni tanlang"></select></label></div>
-      <div><label>Tezlik: <output>1</output>×<input class="rate" type="range" min="0.5" max="1.6" step="0.1" value="1" aria-label="Öqiş tezligi"></label></div>
+      <fieldset class="toggle"><legend>Ovoz</legend>
+        <label><input type="radio" name="ovoz${n}" value="erkak"> Erkak</label>
+        <label><input type="radio" name="ovoz${n}" value="ayol"> Ayol</label>
+      </fieldset>
+      <div><label>Tezlik: <output>1</output>×<input class="rate" type="range" min="0.5" max="1.6" step="0.1" value="1" aria-label="Oʻqish tezligi"></label></div>
     </div>
-    <p class="no-voice muted" hidden>Bu brauzerda ovozlar topilmadi — boşqa brauzer yoki qurilmada sinab köring.</p>
+    <p class="voice-note muted" role="status" hidden></p>
   </div>`;
 }
 
@@ -83,11 +103,11 @@ function songHTML(s, titleId = "") {
     (i === 0 ? `<h3>Naqarot</h3><p class="lines chorus">${esc(s.chorus.join("\n"))}</p>` : `<p class="muted">(Naqarot takrorlanadi)</p>`));
   return `<h2 ${titleId ? `id="${titleId}"` : ""}>${esc(s.title)}</h2>
     <p class="meta">Mavzu: «${esc(s.prompt)}» · ${fmtDate(s.date)}</p>${parts.join("")}
-    <div class="row"><button type="button" class="btn" data-act="copy" aria-label="Qöşiq matnini nusxalaş">📋 Nusxalaş</button></div>
+    <div class="row"><button type="button" class="btn" data-act="copy" aria-label="Qoʻshiq matnini nusxalash">📋 Nusxalash</button></div>
     ${playerHTML()}`;
 }
 
-// Qöşiq kartasini çizadi va tugmalarni ulaydi.
+// Qoʻshiq kartasini chizadi va tugmalarni ulaydi.
 function showSong(container, song, titleId) {
   container.innerHTML = songHTML(song, titleId);
   container.onclick = (e) => {
@@ -98,8 +118,8 @@ function showSong(container, song, titleId) {
   };
   const rate = container.querySelector(".rate");
   rate.oninput = () => (rate.previousElementSibling.textContent = rate.value);
-  container.querySelector(".voice-select").onchange = (e) => localStorage.setItem(VOICE_KEY, e.target.value);
-  fillVoiceSelects();
+  container.querySelectorAll("input[name^=ovoz]").forEach((r) => (r.onchange = () => localStorage.setItem(GENDER_KEY, r.value)));
+  updatePlayers();
 }
 
 function toast(msg) {
@@ -108,7 +128,7 @@ function toast(msg) {
 }
 async function copy(song) {
   try { await navigator.clipboard.writeText(songToText(song)); toast("Nusxalandi ✅"); }
-  catch { toast("Nusxalab bölmadi"); }
+  catch { toast("Nusxalab boʻlmadi"); }
 }
 
 // Generator
@@ -126,15 +146,15 @@ document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", ()
 
 // Arxiv
 function renderList() {
-  const q = toNewAlphabet($("#search").value.trim().toLowerCase());
-  const found = songs.filter((s) => toNewAlphabet(s.title + " " + s.prompt).toLowerCase().includes(q));
+  const q = toStandardLatin($("#search").value.trim().toLowerCase());
+  const found = songs.filter((s) => toStandardLatin(s.title + " " + s.prompt).toLowerCase().includes(q));
   $("#list").innerHTML = found.map((s) => `<li>
     <div><span class="t">${esc(s.title)}</span>${s.example ? '<span class="badge">namuna</span>' : ""}
       <small>«${esc(s.prompt)}» · ${fmtDate(s.date)}</small></div>
     <div class="row" style="margin:0">
-      <button type="button" class="btn" data-act="open" data-id="${s.id}" aria-label="«${esc(s.title)}» qöşiğini oçiş">Oçiş</button>
-      <button type="button" class="btn" data-act="copy" data-id="${s.id}" aria-label="«${esc(s.title)}» matnini nusxalaş">📋</button>
-      <button type="button" class="btn danger" data-act="del" data-id="${s.id}" aria-label="«${esc(s.title)}» qöşiğini öçiriş">🗑</button>
+      <button type="button" class="btn" data-act="open" data-id="${s.id}" aria-label="«${esc(s.title)}» qoʻshigʻini ochish">Ochish</button>
+      <button type="button" class="btn" data-act="copy" data-id="${s.id}" aria-label="«${esc(s.title)}» matnini nusxalash">📋</button>
+      <button type="button" class="btn danger" data-act="del" data-id="${s.id}" aria-label="«${esc(s.title)}» qoʻshigʻini oʻchirish">🗑</button>
     </div></li>`).join("");
   $("#empty").hidden = found.length > 0;
 }
@@ -144,7 +164,7 @@ $("#list").addEventListener("click", (e) => {
   const song = songs.find((s) => s.id === b.dataset.id);
   if (b.dataset.act === "open") { showSong($("#reader-body"), song, "reader-title"); $("#reader").showModal(); }
   if (b.dataset.act === "copy") copy(song);
-  if (b.dataset.act === "del" && confirm(`«${song.title}» öçirilsinmi?`)) { songs = songs.filter((s) => s !== song); save(); renderList(); }
+  if (b.dataset.act === "del" && confirm(`«${song.title}» oʻchirilsinmi?`)) { songs = songs.filter((s) => s !== song); save(); renderList(); }
 });
 $("#reader-close").onclick = () => $("#reader").close();
 $("#reader").addEventListener("close", () => tts?.cancel());

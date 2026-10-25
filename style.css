@@ -53,3 +53,11 @@ dialog::backdrop{background:rgba(0,0,0,.75)}
 #toast.show{opacity:1}
 footer{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:.85rem}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.toggle{border:0;margin:0;padding:0;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.toggle legend{font-size:.85rem;color:var(--muted);margin-bottom:.25rem;padding:0}
+.toggle label{margin:0;cursor:pointer;color:var(--text);font-size:1rem;border:1px solid var(--line);border-radius:999px;padding:.4rem 1rem;background:var(--panel2)}
+.toggle input{position:absolute;opacity:0}
+.toggle label:has(input:checked){background:var(--blue);border-color:var(--blue);color:#fff}
+.toggle label:has(input:disabled){opacity:.4;cursor:not-allowed}
+.toggle label:has(input:focus-visible){outline:2px solid var(--blue2)}
+.player .play:disabled{background:#26304d;color:#8792b3;cursor:not-allowed}

@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Uzbek Songwriter — istalgan mavzuda kulgili özbekça qöşiqlar yaratadi.">
+<meta name="description" content="Uzbek Songwriter — istalgan mavzuda kulgili oʻzbekcha qoʻshiqlar yaratadi.">
 <meta name="theme-color" content="#05070d">
-<title>Uzbek Songwriter — kulgili özbekça qöşiqlar</title>
+<title>Uzbek Songwriter — kulgili oʻzbekcha qoʻshiqlar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#yarat" aria-label="Uzbek Songwriter — boş sahifa">
+  <a class="brand" href="#yarat" aria-label="Uzbek Songwriter — bosh sahifa">
     <svg class="dutor" viewBox="0 0 40 80" aria-hidden="true"><ellipse cx="20" cy="62" rx="14" ry="16" fill="#2f6bff"/><circle cx="20" cy="62" r="4" fill="#05070d"/><rect x="18" y="4" width="4" height="44" rx="2" fill="#8fb3ff"/><circle cx="20" cy="6" r="4" fill="#2f6bff"/></svg>
     <span>Uzbek Songwriter</span>
   </a>
   <nav aria-label="Asosiy menyu">
-    <a href="#yarat" data-tab="yarat">Yaratiş</a>
+    <a href="#yarat" data-tab="yarat">Yaratish</a>
     <a href="#arxiv" data-tab="arxiv">Arxiv</a>
   </nav>
 </header>
@@ -25,38 +25,38 @@
 
 <main>
   <section id="view-yarat" class="view">
-    <h1>Qöşiq yaratamiz! 🪘</h1>
-    <p class="lead">Mavzuni istalgan tilda yozing — qöşiq baribir özbekça va kulgili çiqadi.</p>
+    <h1>Qoʻshiq yaratamiz! 🪘</h1>
+    <p class="lead">Mavzuni istalgan tilda yozing — qoʻshiq baribir oʻzbekcha va kulgili chiqadi.</p>
     <form id="gen-form" class="card">
-      <label for="prompt">Qöşiq mavzusi</label>
-      <textarea id="prompt" rows="3" maxlength="200" placeholder="Masalan: muşugim palov yeydi"></textarea>
-      <div class="chips" aria-label="Tayyor ğoyalar">
+      <label for="prompt">Qoʻshiq mavzusi</label>
+      <textarea id="prompt" rows="3" maxlength="200" placeholder="Masalan: mushugim palov yeydi"></textarea>
+      <div class="chips" aria-label="Tayyor gʻoyalar">
         <button type="button" class="chip">qaynonam taksi haydaydi</button>
         <button type="button" class="chip">my phone hates Monday</button>
         <button type="button" class="chip">мой кот играет в футбол</button>
       </div>
-      <button type="submit" class="btn primary" aria-label="Qöşiq yarat">🎶 Qöşiq yarat</button>
+      <button type="submit" class="btn primary" aria-label="Qoʻshiq yarat">🎶 Qoʻshiq yarat</button>
     </form>
     <article id="result" class="card song" hidden aria-live="polite"></article>
   </section>
 
   <section id="view-arxiv" class="view" hidden>
     <h1>Arxiv 📜</h1>
-    <label for="search" class="sr-only">Arxivdan qidiriş</label>
-    <input id="search" type="search" placeholder="Nom yoki mavzu böyiça qidiring…">
+    <label for="search" class="sr-only">Arxivdan qidirish</label>
+    <input id="search" type="search" placeholder="Nom yoki mavzu boʻyicha qidiring…">
     <ul id="list" class="list"></ul>
-    <p id="empty" class="muted" hidden>Heç narsa topilmadi.</p>
+    <p id="empty" class="muted" hidden>Hech narsa topilmadi.</p>
   </section>
 </main>
 
 <dialog id="reader" aria-labelledby="reader-title">
   <article class="song" id="reader-body"></article>
   <div class="row">
-    <button type="button" class="btn" id="reader-close" aria-label="Oynani yopiş">Yopiş</button>
+    <button type="button" class="btn" id="reader-close" aria-label="Oynani yopish">Yopish</button>
   </div>
 </dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<footer>Uzbek Songwriter · hazil uçun yaratilgan · barça qöşiqlar original</footer>
+<footer>Uzbek Songwriter · hazil uchun yaratilgan · barcha qoʻshiqlar original</footer>
 <script type="module" src="app.js"></script>
 </body>
 </html>
