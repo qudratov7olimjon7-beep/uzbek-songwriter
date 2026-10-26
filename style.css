@@ -61,3 +61,5 @@ footer{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:.85rem}
 .toggle label:has(input:disabled){opacity:.4;cursor:not-allowed}
 .toggle label:has(input:focus-visible){outline:2px solid var(--blue2)}
 .player .play:disabled{background:#26304d;color:#8792b3;cursor:not-allowed}
+footer p{margin:.2rem 0}
+footer .credit{color:var(--ice);font-weight:700;font-size:.95rem;letter-spacing:.02em}
